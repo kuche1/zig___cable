@@ -49,9 +49,18 @@ pub fn main() !u8 {
     const action = argv[1];
 
     if(c.strcmp(action, "listen") == 0){
-        try accept_next_connection(0);
+        try accept_next_connection();
+        
     }else if(c.strcmp(action, "connect") == 0){
-        try establish_new_connection(0);
+        if(argv.len <= 2){
+            try print("Too few arguments for action '{s}'\n", .{action});
+            return 1;
+        }
+        const ip = argv[2];
+        const parsed = ip[0 .. c.strlen(ip)];
+        
+        try establish_new_connection(parsed);
+
     }else{
         try print("Bad action: {s}\n", .{action});
         return 1;
@@ -67,7 +76,7 @@ pub fn main() !u8 {
 
 
 
-fn accept_next_connection(nothing: u32) !void {
+fn accept_next_connection() !void {
 
     var host = net.StreamServer.init(.{.reuse_address=true});
     defer host.deinit();
@@ -94,10 +103,10 @@ fn accept_next_connection(nothing: u32) !void {
 
 
 
-fn establish_new_connection(nothing: u32) !void {
+fn establish_new_connection(addr: []u8) !void {
 
     const port = 6969;
-    const addr = "127.0.0.1";
+    //const addr = "127.0.0.1";
     const parsed_addr = try net.Address.parseIp(addr, port);
     
     var stream: std.net.Stream = undefined;
