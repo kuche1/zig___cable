@@ -198,9 +198,6 @@ fn receive_and_play(net_stream: *std.net.Stream) !void {
 
     echo("=========================== default output: {} ; count: {}\n", .{c.Pa_GetDefaultOutputDevice(), c.Pa_GetDeviceCount()});
 
-    var buf_dynamic: [FRAMES_PER_BUFFER]f32 = undefined;
-    var buf_static: [FRAMES_PER_BUFFER]f32 = undefined;
-    
     // Open an audio I/O stream.
     err = c.Pa_OpenDefaultStream( &stream,
                                 0,          // 2 - stereo input ; 1 - mono ; 0 - no input channels
@@ -214,8 +211,8 @@ fn receive_and_play(net_stream: *std.net.Stream) !void {
                                             //       paFramesPerBufferUnspecified, which
                                             //       tells PortAudio to pick the best,
                                             //       possibly changing, buffer size.
-                                receive_and_play_callback, // this is your callback function
-                                net_stream ); // This is a pointer that will be passed to
+                                null, // this is your callback function
+                                null ); // This is a pointer that will be passed to
                                          //          your callback
 
     if(err != c.paNoError) return error.Pa_OpenDefaultStream;
@@ -233,44 +230,29 @@ fn receive_and_play(net_stream: *std.net.Stream) !void {
         if(err != c.paNoError) echo("error in Pa_StopStream\n", .{});
     }
 
-    while(true){}
-    //while(c.getchar() != '\n'){}
-    
-    
-}
 
+    var buf: [FRAMES_PER_BUFFER]f32 = undefined;
 
-fn receive_and_play_callback(
-                    inputBuf: ?*const c_void,
-                    outputBuf: ?*c_void,
-                    framesPerBuf: c_ulong,
-                    timeInfo: ?*const c.PaStreamCallbackTimeInfo,
-                    statusFlags: c.PaStreamCallbackFlags,
-                    userData: ?*c_void,
-                ) callconv(.C) c_int {
-
-    const net_stream = @ptrCast(*std.net.Stream, @alignCast(@alignOf(*std.net.Stream), userData));
-
-    var out = @ptrCast([*c]f32, @alignCast(@alignOf(*f32), outputBuf));
-
-    var i: c_ulonglong = 0;
-    while(i < framesPerBuf):(i += 1){
+    while(true){
 
         var data: [4]u8 = undefined;
 
-        const red = net_stream.read(data[0..]) catch {
-            echo("======================== naeba se 4eteneto\n", .{});
-            return c.paComplete;
-        };
+        for(buf)|_, ind|{
+            const red = net_stream.read(data[0..]) catch return error.net_stream_read;
+            var fl_data = @bitCast(f32, data);
+            buf[ind] = fl_data;
+        }
 
-        var fl_data = @bitCast(f32, data);
-
-        out[i] = fl_data;
-
+        err = c.Pa_WriteStream(stream, &buf, FRAMES_PER_BUFFER);
+        //echo("write err: {}\n", .{err});
+        
     }
-
-    return c.paContinue;
+    
+    
 }
+
+
+
 
 
 
@@ -285,8 +267,6 @@ fn receive_and_play_callback(
 
 
 fn establish_new_connection(nothing: u32) !void {
-
-    //std.time.sleep(6_000_000_000);
 
     const port = 6969;
     const addr = "127.0.0.1";
@@ -328,8 +308,8 @@ fn record_and_send(net_stream: *std.net.Stream) !void {
                                             //       paFramesPerBufferUnspecified, which
                                             //       tells PortAudio to pick the best,
                                             //       possibly changing, buffer size.
-                                record_and_send_callback, // this is your callback function
-                                net_stream ); // This is a pointer that will be passed to
+                                null, // this is your callback function
+                                null ); // This is a pointer that will be passed to
                                          //          your callback
 
     if(err != c.paNoError) return error.Pa_OpenDefaultStream;
@@ -347,39 +327,22 @@ fn record_and_send(net_stream: *std.net.Stream) !void {
         if(err != c.paNoError) echo("error in Pa_StopStream\n", .{});
     }
 
-    while(true){}
-    //while(c.getchar() != '\n'){}
 
-}
+    var buf: [FRAMES_PER_BUFFER]f32 = undefined;
 
+    while(true){
 
-fn record_and_send_callback(
-                    inputBuf: ?*const c_void,
-                    outputBuf: ?*c_void,
-                    framesPerBuf: c_ulong,
-                    timeInfo: ?*const c.PaStreamCallbackTimeInfo,
-                    statusFlags: c.PaStreamCallbackFlags,
-                    userData: ?*c_void,
-                ) callconv(.C) c_int {
+        err = c.Pa_ReadStream(stream, &buf, FRAMES_PER_BUFFER);
+        //echo("read err: {}\n", .{err});
 
-    const net_stream = @ptrCast(*std.net.Stream, @alignCast(@alignOf(*std.net.Stream), userData));
-
-    const in = @ptrCast([*c]const f32, @alignCast(@alignOf(*const f32), inputBuf));
-
-    var i: c_ulonglong = 0;
-    while(i < framesPerBuf):(i += 1){
-
-        //out[i] = in[i];
-
-        const data = @bitCast([4]u8, in[i]);
-
-        //echo("writing\n", .{});
-        _ = net_stream.write(data[0..]) catch {
-            echo("======================== naeba se pisaneto\n", .{});
-            return c.paComplete;
-        };
-
+        for(buf)|data|{
+            const to_send = @bitCast([4]u8, data);
+            _ = net_stream.write(to_send[0..]) catch {
+                return error.net_stream__write;
+            };
+        }
+        
     }
 
-    return c.paContinue;
 }
+
