@@ -83,7 +83,7 @@ fn accept_next_connection() !void {
 
     const addr = "0.0.0.0"; // 0.0.0.0 0:0:0:0
     const port = 6969;
-    const parsed_addr = try net.Address.parseIp(addr, port); // parseIp4 parseIp6
+    const parsed_addr = try net.Address.resolveIp(addr, port); // parseIp4 parseIp6
     try host.listen(parsed_addr);
 
     const con = try host.accept();
@@ -106,7 +106,7 @@ fn accept_next_connection() !void {
 fn establish_new_connection(addr: []u8) !void {
 
     const port = 6969;
-    const parsed_addr = try net.Address.parseIp(addr, port);
+    const parsed_addr = try net.Address.resolveIp(addr, port);
     
     var stream: std.net.Stream = undefined;
     while(true){
@@ -181,7 +181,7 @@ fn receive_and_play(net_stream: *std.net.Stream) !void {
         var data: [4]u8 = undefined;
 
         for(buf)|_, ind|{
-            const red = net_stream.read(data[0..]) catch return error.net_stream_read;
+            const red = net_stream.read(data[0..]);
             var fl_data = @bitCast(f32, data);
             buf[ind] = fl_data;
         }
@@ -242,9 +242,7 @@ fn record_and_send(net_stream: *std.net.Stream) !void {
 
         for(buf)|data|{
             const to_send = @bitCast([4]u8, data);
-            _ = net_stream.write(to_send[0..]) catch {
-                return error.net_stream__write;
-            };
+            _ = try net_stream.write(to_send[0..]);
         }
         
     }
