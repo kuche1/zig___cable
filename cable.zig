@@ -90,7 +90,7 @@ fn accept_next_connection() !void {
     const adr = con.address;
     echo("connection from {}\n", .{adr});
 
-    var stream = con.stream; // TODO change this to const
+    const stream = con.stream;
 
     const thr_recv = try std.Thread.spawn(receive_and_play, &stream);
     const thr_send = try std.Thread.spawn(record_and_send, &stream);
@@ -134,7 +134,7 @@ fn establish_new_connection(addr: []u8) !void {
 
 
 
-fn receive_and_play(net_stream: *std.net.Stream) !void {
+fn receive_and_play(net_stream: *const std.net.Stream) !void {
 
     var err: c.PaError = undefined;
     var stream: ?*c.PaStream = undefined;
@@ -195,7 +195,7 @@ fn receive_and_play(net_stream: *std.net.Stream) !void {
 }
 
 
-fn record_and_send(net_stream: *std.net.Stream) !void {
+fn record_and_send(net_stream: *const std.net.Stream) !void {
 
     var err: c.PaError = undefined;
     var stream: ?*c.PaStream = undefined;
