@@ -58,7 +58,7 @@ pub fn main() !u8 {
         }
         const ip = argv[2];
         const parsed = ip[0 .. c.strlen(ip)];
-        
+
         try establish_new_connection(parsed);
 
     }else{
@@ -81,9 +81,9 @@ fn accept_next_connection() !void {
     var host = net.StreamServer.init(.{.reuse_address=true});
     defer host.deinit();
 
-    const addr = "0.0.0.0";
+    const addr = "0.0.0.0"; // 0.0.0.0 0:0:0:0
     const port = 6969;
-    const parsed_addr = try net.Address.parseIp(addr, port);
+    const parsed_addr = try net.Address.parseIp(addr, port); // parseIp4 parseIp6
     try host.listen(parsed_addr);
 
     const con = try host.accept();
@@ -106,7 +106,6 @@ fn accept_next_connection() !void {
 fn establish_new_connection(addr: []u8) !void {
 
     const port = 6969;
-    //const addr = "127.0.0.1";
     const parsed_addr = try net.Address.parseIp(addr, port);
     
     var stream: std.net.Stream = undefined;
