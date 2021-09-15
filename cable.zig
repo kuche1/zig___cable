@@ -25,6 +25,9 @@ const c = @cImport({
 const SAMPLE_RATE = 190_000;
 const FRAMES_PER_BUFFER = 256;
 
+const KEY = 'k';
+
+
 pub fn main() !u8 {
 
     var err: c.PaError = undefined;
@@ -181,7 +184,13 @@ fn receive_and_play(net_stream: *const std.net.Stream) !void {
         var data: [4]u8 = undefined;
 
         for(buf)|_, ind|{
+
             const red = net_stream.read(data[0..]);
+
+            for(data)|_,dind|{
+                data[dind] ^= KEY;
+            }
+            
             var fl_data = @bitCast(f32, data);
             buf[ind] = fl_data;
         }
@@ -241,7 +250,13 @@ fn record_and_send(net_stream: *const std.net.Stream) !void {
         //echo("read err: {}\n", .{err});
 
         for(buf)|data|{
-            const to_send = @bitCast([4]u8, data);
+
+            var to_send = @bitCast([4]u8, data);
+
+            for(to_send)|_,ind|{
+                to_send[ind] ^= KEY;
+            }
+
             _ = try net_stream.write(to_send[0..]);
         }
         
