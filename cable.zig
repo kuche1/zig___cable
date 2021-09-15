@@ -140,7 +140,7 @@ fn callback_test() !void {
 
 
 const SAMPLE_RATE = 48_000;
-const FRAMES_PER_BUFFER = 1024; // 256
+const FRAMES_PER_BUFFER = 256; // 256
 
 pub fn main() !void {
 
@@ -215,7 +215,7 @@ fn receive_and_play(net_stream: *std.net.Stream) !void {
                                             //       tells PortAudio to pick the best,
                                             //       possibly changing, buffer size.
                                 receive_and_play_callback, // this is your callback function
-                                &buf_static ); // This is a pointer that will be passed to
+                                net_stream ); // This is a pointer that will be passed to
                                          //          your callback
 
     if(err != c.paNoError) return error.Pa_OpenDefaultStream;
@@ -233,35 +233,8 @@ fn receive_and_play(net_stream: *std.net.Stream) !void {
         if(err != c.paNoError) echo("error in Pa_StopStream\n", .{});
     }
 
-    //while(true){}
+    while(true){}
     //while(c.getchar() != '\n'){}
-
-
-    while(true){
-
-        var i: u64 = 0;
-        
-        while(i < FRAMES_PER_BUFFER):(i += 1){
-
-            var data: [4]u8 = undefined;
-
-            const red = net_stream.read(data[0..]) catch {
-                echo("======================== naeba se 4eteneto\n", .{});
-                return error.net_stream__read;
-            };
-            //echo("red: {}\n", .{red});
-
-            var fl_data = @bitCast(f32, data);
-
-            buf_dynamic[i] = fl_data;
-
-        }
-
-        for(buf_dynamic)|item, ind|{
-            buf_static[ind] = item;
-        }
-
-    }
     
     
 }
@@ -276,16 +249,23 @@ fn receive_and_play_callback(
                     userData: ?*c_void,
                 ) callconv(.C) c_int {
 
-    const buf = @ptrCast(*[FRAMES_PER_BUFFER]f32, @alignCast(@alignOf(*[FRAMES_PER_BUFFER]f32), userData));
+    const net_stream = @ptrCast(*std.net.Stream, @alignCast(@alignOf(*std.net.Stream), userData));
 
     var out = @ptrCast([*c]f32, @alignCast(@alignOf(*f32), outputBuf));
-
-    const in = @ptrCast([*c]const f32, @alignCast(@alignOf(*const f32), inputBuf));
 
     var i: c_ulonglong = 0;
     while(i < framesPerBuf):(i += 1){
 
-        out[i] = buf[i];
+        var data: [4]u8 = undefined;
+
+        const red = net_stream.read(data[0..]) catch {
+            echo("======================== naeba se 4eteneto\n", .{});
+            return c.paComplete;
+        };
+
+        var fl_data = @bitCast(f32, data);
+
+        out[i] = fl_data;
 
     }
 
@@ -309,7 +289,7 @@ fn establish_new_connection(nothing: u32) !void {
     //std.time.sleep(6_000_000_000);
 
     const port = 6969;
-    const addr = "77.76.31.103";
+    const addr = "127.0.0.1";
     const parsed_addr = try net.Address.parseIp(addr, port);
     
     var stream: std.net.Stream = undefined;
@@ -367,8 +347,8 @@ fn record_and_send(net_stream: *std.net.Stream) !void {
         if(err != c.paNoError) echo("error in Pa_StopStream\n", .{});
     }
 
-    //while(true){}
-    while(c.getchar() != '\n'){}
+    while(true){}
+    //while(c.getchar() != '\n'){}
 
 }
 
@@ -383,8 +363,6 @@ fn record_and_send_callback(
                 ) callconv(.C) c_int {
 
     const net_stream = @ptrCast(*std.net.Stream, @alignCast(@alignOf(*std.net.Stream), userData));
-
-    var out = @ptrCast([*c]f32, @alignCast(@alignOf(*f32), outputBuf));
 
     const in = @ptrCast([*c]const f32, @alignCast(@alignOf(*const f32), inputBuf));
 
