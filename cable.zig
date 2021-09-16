@@ -20,12 +20,15 @@ const c = @cImport({
 
 
 
-
+const PORT_AUDIO = 6969;
 
 const SAMPLE_RATE = 30_000;
 const FRAMES_PER_BUFFER = 256;
-const PORT = 6969;
+
 const KEY = 'k';
+
+
+
 
 
 pub fn main() !u8 {
@@ -85,7 +88,7 @@ fn accept_next_connection() !void {
     defer host.deinit();
 
     const addr = "0.0.0.0"; // 0.0.0.0 0:0:0:0
-    const parsed_addr = try net.Address.resolveIp(addr, PORT); // parseIp4 parseIp6
+    const parsed_addr = try net.Address.resolveIp(addr, PORT_AUDIO); // parseIp4 parseIp6
     try host.listen(parsed_addr);
 
     const con = try host.accept();
@@ -107,7 +110,7 @@ fn accept_next_connection() !void {
 
 fn establish_new_connection(addr: []u8) !void {
 
-    const parsed_addr = try net.Address.resolveIp(addr, PORT);
+    const parsed_addr = try net.Address.resolveIp(addr, PORT_AUDIO);
     
     var stream: std.net.Stream = undefined;
     while(true){
@@ -202,6 +205,7 @@ fn receive_and_play(net_stream: *const std.net.Stream) !void {
 }
 
 
+
 fn record_and_send(net_stream: *const std.net.Stream) !void {
 
     var err: c.PaError = undefined;
@@ -261,4 +265,5 @@ fn record_and_send(net_stream: *const std.net.Stream) !void {
     }
 
 }
+
 
