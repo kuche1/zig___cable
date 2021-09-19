@@ -1,5 +1,7 @@
 
 // zig build-exe cable.zig --library c --library rt --library jack --library pthread --library portaudio && ./cable listen
+
+// zig build-exe cable.zig --library c --library rt --library jack --library pthread --library portaudio -target x86_64-linux
 // native x86_64-native x86_64-native-gnu
 
 
@@ -23,7 +25,7 @@ const c = @cImport({
 const PORT_AUDIO = 6969;
 
 const SAMPLE_RATE = 30_000;
-const FRAMES_PER_BUFFER = 256;
+const FRAMES_PER_BUFFER = 256; // 256
 
 const KEY = 'k';
 
@@ -116,7 +118,7 @@ fn establish_new_connection(addr: []u8) !void {
     while(true){
         stream = std.net.tcpConnectToAddress(parsed_addr) catch|err|{
             echo("unable to connect: {} ; retrying\n", .{err});
-            std.time.sleep(4_000_000_000);
+            std.time.sleep(2_000_000_000);
             continue;
         };
         break;
@@ -265,5 +267,21 @@ fn record_and_send(net_stream: *const std.net.Stream) !void {
     }
 
 }
+
+
+
+
+/////////////////////////////// net
+
+fn net_send_f32(stream: *const std.net.Stream, float: f32) !void {
+    var data = @bitCast([4]u8, float);
+
+    for(data)|_,i|{
+        data[i] ^= KEY;
+    }
+
+    _ = try stream.write(data[0..]);
+}
+
 
 
