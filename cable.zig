@@ -1,11 +1,9 @@
 
-// zig build-exe cable.zig --library c --library rt --library jack --library pthread --library portaudio && ./cable listen
-
-// zig build-exe cable.zig --library c --library rt --library jack --library pthread --library portaudio -target x86_64-linux
-// native x86_64-native x86_64-native-gnu
+// zig build-exe cable.zig -lc -lrt -ljack -lpthread -lportaudio -lminiupnpc && ./cable listen
 
 
 const std = @import("std");
+const port_opener = @import("./port-opener.zig");
 const echo = std.debug.print;
 const print = std.io.getStdOut().writer().print;
 const net = std.net;
@@ -22,7 +20,7 @@ const c = @cImport({
 
 
 
-const PORT_AUDIO = 6969;
+const PORT_AUDIO = 6970;
 
 const SAMPLE_RATE = 30_000;
 const FRAMES_PER_BUFFER = 256; // 256
@@ -85,6 +83,9 @@ pub fn main() !u8 {
 
 
 fn accept_next_connection() !void {
+
+    const port_opener_data = try port_opener.init(PORT_AUDIO);
+    defer port_opener.deinit(port_opener_data);
 
     var host = net.StreamServer.init(.{.reuse_address=true});
     defer host.deinit();
