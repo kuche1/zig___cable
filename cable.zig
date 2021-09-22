@@ -20,7 +20,8 @@ const c = @cImport({
 
 
 
-const PORT_AUDIO = 6970;
+const PORT_AUDIO_STR = "6970";
+const PORT_AUDIO_NUM = try std.fmt.parseUnsigned(u16, PORT_AUDIO_STR, 10);
 
 const SAMPLE_RATE = 30_000;
 const FRAMES_PER_BUFFER = 256; // 256
@@ -84,14 +85,14 @@ pub fn main() !u8 {
 
 fn accept_next_connection() !void {
 
-    const port_opener_data = try port_opener.init(PORT_AUDIO);
+    const port_opener_data = try port_opener.init(PORT_AUDIO_STR);
     defer port_opener.deinit(port_opener_data);
 
     var host = net.StreamServer.init(.{.reuse_address=true});
     defer host.deinit();
 
     const addr = "0.0.0.0"; // 0.0.0.0 0:0:0:0
-    const parsed_addr = try net.Address.resolveIp(addr, PORT_AUDIO); // parseIp4 parseIp6
+    const parsed_addr = try net.Address.resolveIp(addr, PORT_AUDIO_NUM); // parseIp4 parseIp6
     try host.listen(parsed_addr);
 
     const con = try host.accept();
@@ -113,7 +114,7 @@ fn accept_next_connection() !void {
 
 fn establish_new_connection(addr: []u8) !void {
 
-    const parsed_addr = try net.Address.resolveIp(addr, PORT_AUDIO);
+    const parsed_addr = try net.Address.resolveIp(addr, PORT_AUDIO_NUM);
     
     var stream: std.net.Stream = undefined;
     while(true){

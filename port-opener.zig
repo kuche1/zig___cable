@@ -1,6 +1,7 @@
 
 //// TODO
 // fix the port_as_str
+// close the port on deinit
 
 const c = @cImport({
     @cInclude("stdlib.h");
@@ -19,7 +20,7 @@ const Port_opener_data = struct{
 };
 
 
-pub fn init(comptime port: u32) !Port_opener_data {
+pub fn init(port: [*c]const u8) !Port_opener_data {
 
     var err: c_int = 0;
 
@@ -74,41 +75,12 @@ pub fn init(comptime port: u32) !Port_opener_data {
     }
 
 
-    const port_as_str = blk: {
-
-        var port_as_int = port;
-
-        const size = 16;
-        var port_as_str: [size]u8 = undefined;
-
-        var ind: u9 = 0;
-        while(port_as_int > 0):(ind += 1){
-            if(ind >= size) {
-                //@compileError("port too high, use a lower port");
-                return error.port_too_high;
-            }
-            port_as_str[ind] = @intCast(@TypeOf(port_as_str[0]), port_as_int % 10) + '0';
-            port_as_int /= 10;
-        }
-        port_as_str[ind] = 0;
-
-        ind -= 1;
-        var ind2: u9 = 0;
-        while(ind2 < ind/2):(ind2 += 1){
-            const tmp: u8 = port_as_str[ind];
-            port_as_str[ind] = port_as_str[ind2];
-            port_as_str[ind2] = tmp;
-        }
-
-        break :blk port_as_str;
-    };
-
     // add a new TCP port mapping from WAN port 12345 to local host port 24680
     err = c.UPNP_AddPortMapping(
         upnp_urls.controlURL,
         servicetype,
-        &port_as_str, // external (WAN) port requested
-        &port_as_str, // internal (LAN) port to which packets will be redirected
+        port, // external (WAN) port requested
+        port, // internal (LAN) port to which packets will be redirected
         lan_address, // internal (LAN) address to which packets will be redirected
         "opened by port opener (lol)", // text description to indicate why or who is responsible for the port mapping
         "TCP", // protocol must be either TCP or UDP
