@@ -24,7 +24,7 @@ const PORT_AUDIO_STR = "6970";
 const PORT_AUDIO_NUM = try std.fmt.parseUnsigned(u16, PORT_AUDIO_STR, 10);
 
 const SAMPLE_RATE = 30_000;
-const FRAMES_PER_BUFFER = 256; // 256
+const FRAMES_PER_BUFFER = SAMPLE_RATE / 8; // 256 // SAMPLE_RATE for 1 second?
 
 const KEY = 'k';
 
@@ -33,6 +33,8 @@ const KEY = 'k';
 
 
 pub fn main() !u8 {
+
+    echo("buf size: {}\n", .{FRAMES_PER_BUFFER});
 
     var err: c.PaError = undefined;
 
