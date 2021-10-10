@@ -23,7 +23,7 @@ const c = @cImport({
 const PORT_AUDIO_STR = "6970";
 const PORT_AUDIO_NUM = try std.fmt.parseUnsigned(u16, PORT_AUDIO_STR, 10);
 
-const SAMPLE_RATE = 30_000;
+const SAMPLE_RATE = 192_000;
 const FRAMES_PER_BUFFER = SAMPLE_RATE / 4; // 256 // use SAMPLE_RATE for 1 second?
 
 const KEY = 'k';
@@ -192,7 +192,7 @@ fn receive_and_play(net_stream: *const std.net.Stream) !void {
 
         for(buf)|_, ind|{
 
-            const red = net_stream.read(data[0..]);
+            _ = try net_stream.read(data[0..]);
 
             for(data)|_,dind|{
                 data[dind] ^= KEY;
