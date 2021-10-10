@@ -24,7 +24,7 @@ const PORT_AUDIO_STR = "6970";
 const PORT_AUDIO_NUM = try std.fmt.parseUnsigned(u16, PORT_AUDIO_STR, 10);
 
 const SAMPLE_RATE = 30_000;
-const FRAMES_PER_BUFFER = SAMPLE_RATE / 8; // 256 // SAMPLE_RATE for 1 second?
+const FRAMES_PER_BUFFER = SAMPLE_RATE / 4; // 256 // use SAMPLE_RATE for 1 second?
 
 const KEY = 'k';
 
